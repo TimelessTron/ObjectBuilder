@@ -1,0 +1,17 @@
+{
+    "name": "timelesstron/object-builder",
+    "description": "For automatically creating objects. Objects are created with random values",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Timelesstron\\ObjectBuilder\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Silas Hermann",
+            "email": "timelesstron@playgx.de"
+        }
+    ],
+    "require": {}
+}
