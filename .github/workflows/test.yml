@@ -27,4 +27,4 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Test
-        run: compser exec phpunit
+        run: composer exec phpunit
