@@ -4,6 +4,8 @@ namespace Timelesstron\ObjectBuilder\Tests\ClassBuilder;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use Timelesstron\ObjectBuilder\ClassBuilder\EnumBuilder;
 use Timelesstron\ObjectBuilder\ObjectBuilder;
 use Timelesstron\ObjectBuilder\Tests\ClassBuilder\Helper\MyTestEnumeration;
 
@@ -13,18 +15,23 @@ class EnumBuilderTest extends TestCase
     {
         for ($i = 0; $i < 5; $i++) {
             $this->assertContains(
-                ObjectBuilder::init(MyTestEnumeration::class)->build(),
+                (new EnumBuilder())->build(
+                    new ReflectionClass(MyTestEnumeration::class),
+                    []
+                ),
                 MyTestEnumeration::cases()
             );
         }
-
     }
 
     public function testEnumBuilderWithOneParameter(): void
     {
         $this->assertSame(
             MyTestEnumeration::OK,
-            ObjectBuilder::init(MyTestEnumeration::class, ['OK'])->build()
+            (new EnumBuilder())->build(
+                new ReflectionClass(MyTestEnumeration::class),
+                ['OK']
+            )
         );
     }
 
@@ -32,7 +39,10 @@ class EnumBuilderTest extends TestCase
     {
         for ($i = 0; $i < 5; $i++) {
             $this->assertContains(
-                ObjectBuilder::init(MyTestEnumeration::class, ['WARNING', 'ERROR'])->build(),
+                (new EnumBuilder())->build(
+                    new ReflectionClass(MyTestEnumeration::class),
+                    ['WARNING', 'ERROR']
+                ),
                 [MyTestEnumeration::WARNING, MyTestEnumeration::ERROR]
             );
         }
@@ -45,6 +55,9 @@ class EnumBuilderTest extends TestCase
             'Invalid parameter given vor enum MyTestEnumeration: "NOT_EXIST_KEY".'
         );
 
-        ObjectBuilder::init(MyTestEnumeration::class, ['NOT_EXIST_KEY'])->build();
+        (new EnumBuilder())->build(
+            new ReflectionClass(MyTestEnumeration::class),
+            ['NOT_EXIST_KEY']
+        );
     }
 }
