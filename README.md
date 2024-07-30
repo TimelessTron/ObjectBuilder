@@ -21,3 +21,10 @@ $result = ObjectBuilder::init(MyEnumeration::class, ['OK'])->build();
 $result = ObjectBuilder::init(MyEnumeration::class, ['WARNING', 'ERROR'])->build();
 // returns one of MyEnumeration::WARNING|MyEnumeration::ERROR
 ```
+## Trait
+Für übergebene Traits wird eine anonyme Klasse erzeugt die den Trait verwendet.
+Übergebene Parameter werden vom TraitBuilder nicht berücksichtigt.
+```php
+$result = ObjectBuilder::init(MyTrait::class)->build();
+// returns {class@anonymous/...}
+```
