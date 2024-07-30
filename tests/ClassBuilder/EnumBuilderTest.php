@@ -17,6 +17,7 @@ class EnumBuilderTest extends TestCase
                 MyTestEnumeration::cases()
             );
         }
+
     }
 
     public function testEnumBuilderWithOneParameter(): void
