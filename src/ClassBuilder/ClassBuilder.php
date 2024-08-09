@@ -38,39 +38,55 @@ class ClassBuilder implements ClassBuilderInterface
      */
     public function build(ReflectionClass $class, array $parameters): mixed
     {
-
         $this->parameters = $parameters;
         $constructor = $class->getConstructor();
+        /**
+         * Analysieren was die Klasse hat.
+         * - Mit Constructor
+         * - Ohne Constructor
+         *
+         * Wenn die Klasse ein Constructor hat, muss weiter überprüft werden:
+         * - Ist der Constructor privat?
+         * - gibt es static methoden
+         */
 
-        if($constructor instanceof ReflectionMethod){
-            if(!$constructor->isPrivate()){
+        if ($constructor instanceof ReflectionMethod && $constructor->isPrivate()) {
+            $result = $this->instantiateRandomStaticMethod($class);
 
-                try {
-                    return $class->newInstanceArgs(
-                        $this->handleClassWithConstructor($constructor)
-                    );
-                } catch (Throwable $exception) {
-                    if(str_contains($exception->getMessage(), 'must be of type array, string given')){
-                        throw new InvalidArgumentException(
-                            sprintf('For Objects you must given an array, not an single value. Message: %s', $exception->getMessage())
-                        );
-                    }
-                    $result = $this->handleClassWithStaticInstantiation($class);
-                    if(null === $result){
-                        return $this->tryExceptionSolver($class, $exception);
-//                        throw $exception;
-                    }
-
-                    return $result;
-                }
+            if ($result) {
+                return $result;
             }
 
             throw new ObjectBuilderWrongClassesGivenException(
-                sprintf('Cannot handle class "%s" with private constructor.', $class->getShortName())
+                sprintf('Cannot handle class "%s" with private constructor and no static methode.', $class->getShortName())
             );
         }
 
-        return $this->handleClassWithoutConstructor($class);
+        if ($constructor instanceof ReflectionMethod) {
+            try {
+                return $class->newInstanceArgs(
+                    $this->handleClassWithConstructor($constructor)
+                );
+            } catch (Throwable $exception) {
+                if(str_contains($exception->getMessage(), 'must be of type array, string given')){
+                    throw new InvalidArgumentException(
+                        sprintf('For Objects you must given an array, not an single value. Message: %s', $exception->getMessage())
+                    );
+                }
+                $result = $this->handleClassWithStaticInstantiation($class);
+                if(null === $result){
+                    return $this->tryExceptionSolver($class, $exception);
+                    //                        throw $exception;
+                }
+
+                return $result;
+            }
+        }
+
+        if ($constructor === null) {
+            return $this->handleClassWithoutConstructor($class);
+        }
+
     }
 
     /**
@@ -180,6 +196,38 @@ class ClassBuilder implements ClassBuilderInterface
                     $d = '';
                 }
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    private function instantiateRandomStaticMethod(ReflectionClass $class): mixed
+    {
+        $methods = $class->getMethods();
+        $staticSelfBuildMethods = array_filter(
+            $methods,
+            fn(ReflectionMethod $method) => $method->isStatic() && !$method->getReturnType()->isBuiltin()
+        );
+
+        if (empty($staticSelfBuildMethods)) {
+            return null;
+        }
+
+        $randomStaticMethode = $staticSelfBuildMethods[array_rand($staticSelfBuildMethods)];
+
+        $parameters = [];
+        foreach ($randomStaticMethode->getParameters() as $parameter) {
+            $parameters[] = $this->generateRandomValue($parameter);
+        }
+
+        try {
+            $name = $randomStaticMethode->getName();
+            return $class->getName()::$name(...$parameters);
+        } catch (Throwable $throwable){
+            // Todo Was soll hier passieren?
         }
 
         return null;

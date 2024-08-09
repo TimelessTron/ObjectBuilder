@@ -60,11 +60,12 @@ $options = [
 $result = ObjectBuilder::init(MyInterface::class, $options)->build();
 // returns Object of MyInterfaceClass
 $value = $result->getMyObject()
-/** returns class SomeObject {
+/** 
+ * returns class SomeObject {
  *      string $name => "Gustav",
  *      int $age => 27,
  * }
- * 
+ */
 ```
 Es ist auch möglich die Parameter einzeln an das Object weiterzureichen.
 ```php
@@ -75,9 +76,10 @@ $options = [
 $result = ObjectBuilder::init(MyInterface::class, $options)->build();
 // returns Object of MyInterfaceClass
 $value = $result->getMyObject()
-/** returns class SomeObject {
+/** 
+ * returns class SomeObject {
  *      string $name => "Bernhard",
  *      int $age => 27356453,
  * }
- * 
+ */
 ```
