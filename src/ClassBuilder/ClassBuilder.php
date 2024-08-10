@@ -2,7 +2,6 @@
 
 namespace Timelesstron\ObjectBuilder\ClassBuilder;
 
-use App\Module\ObjectBuilder\Exceptions\ClassBuilder\ObjectBuilderDataTypeAndClassNotFoundException;
 use DateInterval;
 use DatePeriod;
 use PHPUnit\Event\InvalidArgumentException;
@@ -16,6 +15,7 @@ use Throwable;
 use Timelesstron\ObjectBuilder\ClassBuilder\Dto\NoValueSet;
 use Timelesstron\ObjectBuilder\DataTypes\DataTypeInterface;
 use Timelesstron\ObjectBuilder\Dto\Property;
+use Timelesstron\ObjectBuilder\Exceptions\ClassBuilder\ObjectBuilderDataTypeAndClassNotFoundException;
 use Timelesstron\ObjectBuilder\Exceptions\ObjectBuilderReflectionException;
 use Timelesstron\ObjectBuilder\Exceptions\ObjectBuilderWrongClassesGivenException;
 use Timelesstron\ObjectBuilder\Exceptions\UnknownOrBadFormatNotDeclaredClassException;
@@ -73,8 +73,8 @@ class ClassBuilder implements ClassBuilderInterface
                         sprintf('For Objects you must given an array, not an single value. Message: %s', $exception->getMessage())
                     );
                 }
-                $result = $this->handleClassWithStaticInstantiation($class);
-                if(null === $result){
+                $result = $this->instantiateRandomStaticMethod($class);
+                if(null === $result || false === $result){
                     return $this->tryExceptionSolver($class, $exception);
                     //                        throw $exception;
                 }
@@ -95,17 +95,17 @@ class ClassBuilder implements ClassBuilderInterface
     private function generateRandomValue(ReflectionParameter|ReflectionProperty $parameter): mixed
     {
         $propertyType = DataTypeService::getDataTypeFromString(
-            (string)$parameter->getType()
+            (string)$parameter->getType() //ToDo wenn getType null ist, wird durch (string) "" zurückgegeben. Vielleicht mixed zurück geben?
         );
 
-        if(null !== $propertyType){
+        if (null !== $propertyType) {
             $propertyType = $propertyType[array_rand($propertyType)];
         }
 
-        if(
+        if (
             array_key_exists($parameter->getName(), $this->parameters) &&
             null === $this->parameters[$parameter->getName()]
-        ){
+        ) {
             $propertyType = null;
         }
 
@@ -132,7 +132,7 @@ class ClassBuilder implements ClassBuilderInterface
         try {
             return ObjectBuilder::init(
                 $property->type,
-                $property->value ?? []
+                $property->value instanceof NoValueSet ? [] : $property->value
             )->build();
         } catch (ObjectBuilderReflectionException){
             throw new ObjectBuilderDataTypeAndClassNotFoundException(
@@ -167,6 +167,9 @@ class ClassBuilder implements ClassBuilderInterface
         return $object;
     }
 
+    /**
+     * @throws ReflectionException
+     */
     private function handleClassWithConstructor(ReflectionMethod $constructor): array
     {
         $parameterValues = [];
@@ -178,29 +181,6 @@ class ClassBuilder implements ClassBuilderInterface
         return $parameterValues;
     }
 
-    private function handleClassWithStaticInstantiation(ReflectionClass $class): mixed
-    {
-        $methods = $class->getMethods();
-        foreach ($methods as $method) {
-            $parameterValues = [];
-            if($method->isStatic()){
-                $name = $method->getName();
-                foreach ($method->getParameters() as $parameter) {
-                    $parameterValues[] = $this->generateRandomValue($parameter);
-                }
-
-                try {
-                    return $class->getName()::$name(...$parameterValues);
-                } catch (Throwable $throwable){
-                    // Todo Was soll hier passieren?
-                    $d = '';
-                }
-            }
-        }
-
-        return null;
-    }
-
     /**
      * @throws ReflectionException
      */
@@ -209,7 +189,7 @@ class ClassBuilder implements ClassBuilderInterface
         $methods = $class->getMethods();
         $staticSelfBuildMethods = array_filter(
             $methods,
-            fn(ReflectionMethod $method) => $method->isStatic() && !$method->getReturnType()->isBuiltin()
+            fn(ReflectionMethod $method) => $method->isStatic() && ($method->getReturnType() && !$method->getReturnType()->isBuiltin())
         );
 
         if (empty($staticSelfBuildMethods)) {
@@ -248,6 +228,9 @@ class ClassBuilder implements ClassBuilderInterface
         return null;
     }
 
+    /**
+     * @throws ReflectionException
+     */
     private function tryExceptionSolver(ReflectionClass $class, Throwable|\Exception $exception): null|object
     {
         $newParameters = [];
@@ -271,8 +254,7 @@ class ClassBuilder implements ClassBuilderInterface
                 $paremeters = $parameterOptions[$key];
                 unset($parameterOptions[$key]);
 
-                $result = $this->splitParametersFromExceptionMessage($paremeters);
-                foreach ($result as $item) {
+                foreach ($this->splitParametersFromExceptionMessage($paremeters) as $item) {
                     if (is_array($item)) {
                         $item = $item[array_rand($item)];
                     }
@@ -281,7 +263,7 @@ class ClassBuilder implements ClassBuilderInterface
                     $property = new Property(
                         name: null,
                         type: $item,
-                        value: $dataTypeHandler?->build() ?? null, //silas value wird in 232 neu generiert. dieser wert ist überflüssig ?
+                        value: $dataTypeHandler?->build() ?? new NoValueSet(),
                     );
 
                     if($dataTypeHandler instanceof DataTypeInterface){
@@ -294,7 +276,7 @@ class ClassBuilder implements ClassBuilderInterface
                     try {
                         $newParameters[] = ObjectBuilder::init(
                             $property->type,
-                            $property->value ?? []
+                            $property->value instanceof NoValueSet ? [] : $property->value
                         )->build();
                     } catch (ObjectBuilderReflectionException){
                         throw new ObjectBuilderDataTypeAndClassNotFoundException(
@@ -317,7 +299,7 @@ class ClassBuilder implements ClassBuilderInterface
 
                         $newParameters = match ($class->getName()) {
                             DateInterval::class => ['P7D'],
-                            DatePeriod::class => ['R4/2023-07-01T00:00:00Z/P7D'],
+                            DatePeriod::class => ['R4/1983-08-04T00:06:00Z/P7D'],
                             default => throw new UnknownOrBadFormatNotDeclaredClassException($class, $exception),
                         };
 
@@ -334,7 +316,8 @@ class ClassBuilder implements ClassBuilderInterface
         );
     }
 
-    private function splitParametersFromExceptionMessage($function){
+    private function splitParametersFromExceptionMessage($function): array
+    {
         $function = str_replace(' [', ', [', $function);
         $parameters = explode(', ', trim($function, '( )'));
         $result = [];
