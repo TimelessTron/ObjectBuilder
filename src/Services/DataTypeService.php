@@ -26,7 +26,7 @@ class DataTypeService
             'mixed' => new MixedBuilder(),
             'object' => new SimpleObjectBuilder(),
             'callback', 'callable' => new CallbackBuilder(),
-            null, '?', 'null' => new NullBuilder(),
+            null, '?', 'null', '' => new NullBuilder(),
 
             default => null,
         };

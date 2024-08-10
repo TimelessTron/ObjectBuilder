@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Module\ObjectBuilder\Exceptions\ClassBuilder;
+namespace Timelesstron\ObjectBuilder\Exceptions\ClassBuilder;
 
 use DomainException;
 
