@@ -16,7 +16,6 @@ use Timelesstron\ObjectBuilder\ClassBuilder\Dto\NoValueSet;
 use Timelesstron\ObjectBuilder\DataTypes\DataTypeInterface;
 use Timelesstron\ObjectBuilder\Dto\Property;
 use Timelesstron\ObjectBuilder\Exceptions\ClassBuilder\ObjectBuilderDataTypeAndClassNotFoundException;
-use Timelesstron\ObjectBuilder\Exceptions\ObjectBuilderReflectionException;
 use Timelesstron\ObjectBuilder\Exceptions\ObjectBuilderWrongClassesGivenException;
 use Timelesstron\ObjectBuilder\Exceptions\UnknownOrBadFormatNotDeclaredClassException;
 use Timelesstron\ObjectBuilder\ObjectBuilder;
@@ -24,13 +23,12 @@ use Timelesstron\ObjectBuilder\Services\DataTypeService;
 
 class ClassBuilder implements ClassBuilderInterface
 {
-    const TYPE = 'class';
-    /** @var array<string, string|array> */
+    /** @var array<string, mixed> */
     private array $parameters;
 
     /**
-     * @param ReflectionClass $class
-     * @param array<string, string|array> $parameters
+     * @param ReflectionClass<Object> $class
+     * @param array<string, mixed> $parameters
      *
      * @return mixed
      * @throws ReflectionException
@@ -50,11 +48,15 @@ class ClassBuilder implements ClassBuilderInterface
          * - gibt es static methoden
          */
 
-        if ($constructor instanceof ReflectionMethod && $constructor->isPrivate()) {
-            $result = $this->instantiateRandomStaticMethod($class);
+        if ($constructor === null) {
+            return $this->handleClassWithoutConstructor($class);
+        }
 
-            if ($result) {
-                return $result;
+
+        if ($constructor->isPrivate()) {
+            $newInstance = $this->instantiateRandomStaticMethod($class);
+            if (null !== $newInstance) {
+                return $newInstance;
             }
 
             throw new ObjectBuilderWrongClassesGivenException(
@@ -62,29 +64,23 @@ class ClassBuilder implements ClassBuilderInterface
             );
         }
 
-        if ($constructor instanceof ReflectionMethod) {
-            try {
-                return $class->newInstanceArgs(
-                    $this->handleClassWithConstructor($constructor)
+        try {
+            return $class->newInstanceArgs(
+                $this->handleClassWithConstructor($constructor)
+            );
+        } catch (Throwable $exception) {
+            if (str_contains($exception->getMessage(), 'must be of type array, string given')) {
+                throw new InvalidArgumentException(
+                    sprintf('For Objects you must given an array, not an single value. Message: %s', $exception->getMessage())
                 );
-            } catch (Throwable $exception) {
-                if(str_contains($exception->getMessage(), 'must be of type array, string given')){
-                    throw new InvalidArgumentException(
-                        sprintf('For Objects you must given an array, not an single value. Message: %s', $exception->getMessage())
-                    );
-                }
-                $result = $this->instantiateRandomStaticMethod($class);
-                if(null === $result || false === $result){
-                    return $this->tryExceptionSolver($class, $exception);
-                    //                        throw $exception;
-                }
-
-                return $result;
             }
-        }
+            $newInstance = $this->instantiateRandomStaticMethod($class);
+            if (null === $newInstance || false === $newInstance) {
+                return $this->tryExceptionSolver($class, $exception);
+                //                        throw $exception;
+            }
 
-        if ($constructor === null) {
-            return $this->handleClassWithoutConstructor($class);
+            return $newInstance;
         }
 
     }
@@ -95,7 +91,7 @@ class ClassBuilder implements ClassBuilderInterface
     private function generateRandomValue(ReflectionParameter|ReflectionProperty $parameter): mixed
     {
         $propertyType = DataTypeService::getDataTypeFromString(
-            (string)$parameter->getType() //ToDo wenn getType null ist, wird durch (string) "" zurückgegeben. Vielleicht mixed zurück geben?
+            (string)$parameter->getType()
         );
 
         if (null !== $propertyType) {
@@ -129,32 +125,33 @@ class ClassBuilder implements ClassBuilderInterface
             return $dataTypeHandler->build();
         }
 
-        try {
+        if (is_string($property->type) && (class_exists($property->type) || interface_exists($property->type))) {
             return ObjectBuilder::init(
                 $property->type,
                 $property->value instanceof NoValueSet ? [] : $property->value
             )->build();
-        } catch (ObjectBuilderReflectionException){
-            throw new ObjectBuilderDataTypeAndClassNotFoundException(
-                sprintf(
-                    'Property name: "%s" with value: "%s" has unknown datatype: "%s"',
-                    $property->name,
-                    $property->value,
-                    $property->type,
-                )
-            );
         }
+
+        throw new ObjectBuilderDataTypeAndClassNotFoundException(
+            sprintf(
+                'Property name: "%s" with value: "%s" has unknown datatype: "%s"',
+                $property->name,
+                $property->value,
+                $property->type,
+            )
+        );
     }
 
     /**
+     * @param ReflectionClass<Object> $reflectionClass
      * @throws ReflectionException
      */
-    private function handleClassWithoutConstructor(ReflectionClass $class): object
+    private function handleClassWithoutConstructor(ReflectionClass $reflectionClass): object
     {
 
-        $object = $class->newInstance();
+        $object = $reflectionClass->newInstance();
 
-        foreach ($class->getProperties() as $property) {
+        foreach ($reflectionClass->getProperties() as $property) {
             if ($property->getType() instanceof ReflectionType) {
                 $value = $this->generateRandomValue($property);
 
@@ -169,6 +166,8 @@ class ClassBuilder implements ClassBuilderInterface
 
     /**
      * @throws ReflectionException
+     *
+     * @return array<int, mixed>
      */
     private function handleClassWithConstructor(ReflectionMethod $constructor): array
     {
@@ -182,14 +181,17 @@ class ClassBuilder implements ClassBuilderInterface
     }
 
     /**
+     * @param ReflectionClass<Object> $reflectionClass
+     *
      * @throws ReflectionException
      */
-    private function instantiateRandomStaticMethod(ReflectionClass $class): mixed
+    private function instantiateRandomStaticMethod(ReflectionClass $reflectionClass): mixed
     {
-        $methods = $class->getMethods();
+        $methods = $reflectionClass->getMethods();
         $staticSelfBuildMethods = array_filter(
             $methods,
-            fn(ReflectionMethod $method) => $method->isStatic() && ($method->getReturnType() && !$method->getReturnType()->isBuiltin())
+            fn(ReflectionMethod $method) =>
+                $method->isStatic() && null !== $method->getReturnType() && !$method->getReturnType()->isBuiltin()
         );
 
         if (empty($staticSelfBuildMethods)) {
@@ -205,7 +207,7 @@ class ClassBuilder implements ClassBuilderInterface
 
         try {
             $name = $randomStaticMethode->getName();
-            return $class->getName()::$name(...$parameters);
+            return $reflectionClass->getName()::$name(...$parameters);
         } catch (Throwable $throwable){
             // Todo Was soll hier passieren?
         }
@@ -229,9 +231,12 @@ class ClassBuilder implements ClassBuilderInterface
     }
 
     /**
+     * @param ReflectionClass<Object> $class
+     * @param Throwable $exception
+     *
      * @throws ReflectionException
      */
-    private function tryExceptionSolver(ReflectionClass $class, Throwable|\Exception $exception): null|object
+    private function tryExceptionSolver(ReflectionClass $class, Throwable $exception): object
     {
         $newParameters = [];
 
@@ -239,22 +244,24 @@ class ClassBuilder implements ClassBuilderInterface
 
             $newParameters = match ($class->getName()) {
                 DateInterval::class => ['P7D'],
+                DatePeriod::class => ['R4/1983-08-04T00:06:00Z/P7D'],
                 default => throw new UnknownOrBadFormatNotDeclaredClassException($class, $exception),
             };
-            return $class->newInstanceArgs(
-                $newParameters
-            );
-        } elseif (preg_match('/::__construct\(\) accepts (.*) as arguments/', $exception->getMessage(), $matches)) {
+
+            return $class->newInstanceArgs($newParameters);
+        }
+
+        if (preg_match('/::__construct\(\) accepts (.*) as arguments/', $exception->getMessage(), $matches)) {
             // silas versuche ein $parameterOptions. Wenn er funktioniert, ok. wenn nicht, nächten match versuchen, bis keiner mehr da ist oder einer funktioniert hat.
 
             $parameterOptions = explode(', or ', $matches[1]);
 
             do{
                 $key = array_rand($parameterOptions);
-                $paremeters = $parameterOptions[$key];
+                $parameters = $parameterOptions[$key];
                 unset($parameterOptions[$key]);
 
-                foreach ($this->splitParametersFromExceptionMessage($paremeters) as $item) {
+                foreach ($this->splitParametersFromExceptionMessage($parameters) as $item) {
                     if (is_array($item)) {
                         $item = $item[array_rand($item)];
                     }
@@ -266,34 +273,34 @@ class ClassBuilder implements ClassBuilderInterface
                         value: $dataTypeHandler?->build() ?? new NoValueSet(),
                     );
 
-                    if($dataTypeHandler instanceof DataTypeInterface){
+                    if ($dataTypeHandler instanceof DataTypeInterface) {
                         $dataTypeHandler->setProperty($property);
 
                         $newParameters[] = $dataTypeHandler->build();
                         continue;
                     }
 
-                    try {
+                    if (is_string($property->type) && (class_exists($property->type) || interface_exists($property->type))) {
                         $newParameters[] = ObjectBuilder::init(
                             $property->type,
                             $property->value instanceof NoValueSet ? [] : $property->value
                         )->build();
-                    } catch (ObjectBuilderReflectionException){
-                        throw new ObjectBuilderDataTypeAndClassNotFoundException(
-                            sprintf(
-                                'Property name: "%s" with value: "%s" has unknown datatype: "%s"',
-                                $property->name,
-                                $property->value,
-                                $property->type,
-                            )
-                        );
+
+                        continue;
                     }
+
+                    throw new ObjectBuilderDataTypeAndClassNotFoundException(
+                        sprintf(
+                            'Property name: "%s" with value: "%s" has unknown datatype: "%s"',
+                            $property->name,
+                            $property->value,
+                            $property->type,
+                        )
+                    );
                 }
 
                 try {
-                    return $class->newInstanceArgs(
-                        $newParameters
-                    );
+                    return $class->newInstanceArgs($newParameters);
                 } catch (Throwable $exception){
                     if (preg_match('/Unknown or bad format \((.*)\)/', $exception->getMessage(), $unknown)) {
 
@@ -311,12 +318,13 @@ class ClassBuilder implements ClassBuilderInterface
 
         }
 
-        return $class->newInstanceArgs(
-            $newParameters
-        );
+        return $class->newInstanceArgs($newParameters);
     }
 
-    private function splitParametersFromExceptionMessage($function): array
+    /**
+     * @return array<int, string|array<int, mixed>>
+     */
+    private function splitParametersFromExceptionMessage(string $function): array
     {
         $function = str_replace(' [', ', [', $function);
         $parameters = explode(', ', trim($function, '( )'));
@@ -329,7 +337,7 @@ class ClassBuilder implements ClassBuilderInterface
                 continue;
             }
 
-            if(substr($parameter, -1) === ']'){
+            if(str_ends_with($parameter, ']')){
                 $newArray[] = substr($parameter, 0, -1);
                 $parameter = $newArray;
                 $newArray = [];

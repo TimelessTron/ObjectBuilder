@@ -15,3 +15,7 @@ test: phpunit ## run all tests
 .PHONY: test-coverage
 test-coverage: ## run unit tests and create a report
 	XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html reports/ --coverage-text
+## —— ✅ Code Style ✅ ———————————————————————————————————————————————————————————
+.PHONY: phpstan
+phpstan: ## run phpstan
+	vendor/bin/phpstan analyse

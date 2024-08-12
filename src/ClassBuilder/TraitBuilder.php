@@ -7,7 +7,11 @@ use ReflectionClass;
 class TraitBuilder implements ClassBuilderInterface
 {
 
-    public function build(ReflectionClass $class, array $parameters): mixed
+    /**
+     * @param ReflectionClass<Object> $class
+     * @param array<string, mixed> $parameters
+     */
+    public function build(ReflectionClass $class, array $parameters): object
     {
         $anonClassWithTrait = sprintf(
             'return new class { use %s; };',

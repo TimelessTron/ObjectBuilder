@@ -7,38 +7,51 @@ use Timelesstron\ObjectBuilder\ClassBuilder\Dto\NoValueSet;
 use Timelesstron\ObjectBuilder\ClassBuilder\InterfaceBuilder;
 use Timelesstron\ObjectBuilder\Dto\Property;
 use Timelesstron\ObjectBuilder\Exceptions\InfinityInterfaceException;
+use Timelesstron\ObjectBuilder\Exceptions\ObjectBuilderUnknownClassTypeGivenException;
 use Timelesstron\ObjectBuilder\ObjectBuilder;
 use Timelesstron\ObjectBuilder\Services\DataTypeService;
 
 final class FileContentHandler implements HandlerInterface
 {
-
-    const HAS_NO_VALUE = true;
+    /**
+     * @var ReflectionClass<Object>
+     */
     private ReflectionClass $reflectionClass;
+
+    /** @var array<string, mixed>  */
     private array $parameters;
 
     private string $className;
     private string $namespace;
 
-    /** @var array<int, string> $useStatements */
+    /** @var array<int|string, string> $useStatements */
     private array $useStatements = [];
 
+    /**
+     * @param ReflectionClass<Object> $reflectionClass
+     * @param array<string, mixed> $parameters
+     */
     public function execute(ReflectionClass $reflectionClass, array $parameters): object
     {
         $this->init($reflectionClass, $parameters);
 
         $rowsOfFileContent = file(
-            $reflectionClass->getFileName(),
+            $reflectionClass->getFileName() ?: '',
             FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES,
         );
 
-        $x = $this->handleRowOfFileContent($rowsOfFileContent);
+        if ($rowsOfFileContent) {
+            eval($this->handleRowOfFileContent($rowsOfFileContent));
 
-        eval($x);
+            return new $this->className();
+        }
 
-        return new $this->className();
+        throw new ObjectBuilderUnknownClassTypeGivenException();
     }
 
+    /**
+     * @param ReflectionClass<Object> $reflectionClass
+     */
     public static function support(ReflectionClass $reflectionClass): bool
     {
         if (!$reflectionClass->getFileName()){
@@ -53,6 +66,9 @@ final class FileContentHandler implements HandlerInterface
         );
     }
 
+    /**
+     * @param array<int, string> $rowsOfFileContent
+     */
     private function handleRowOfFileContent(array $rowsOfFileContent): string
     {
         $newRowsOfContent = [];
@@ -104,7 +120,7 @@ final class FileContentHandler implements HandlerInterface
 
         // gibt es contentRow return type als use statement? wenn nicht, Hinzufügen
         if (null === $dataTypeBuilder) {
-            if (!isset($this->useStatements[$returnType]) && (bool)$this->namespace){
+            if (!isset($this->useStatements[$returnType]) && $this->namespace){
                 $this->useStatements[$returnType] = sprintf('use %s\%s;', $this->namespace, $returnType);
             }
         }
@@ -124,6 +140,10 @@ final class FileContentHandler implements HandlerInterface
         );
     }
 
+    /**
+     * @param ReflectionClass<Object> $reflectionClass
+     * @param array<string, mixed> $parameters
+     */
     private function init(ReflectionClass $reflectionClass, array $parameters): void
     {
         $this->reflectionClass = $reflectionClass;
@@ -143,7 +163,11 @@ final class FileContentHandler implements HandlerInterface
 
             $className = preg_replace_callback(
                 '/(\D*)(\d+)?/',
-                fn($matches): string => $matches[1] . intval($matches[2] ?? 0) + 1,
+                function ($matches): string {
+                    $prefix = $matches[1];
+                    $number = isset($matches[2]) ? (int)$matches[2] + 1 : 1;
+                    return $prefix . $number;
+                },
                 $className,
                 1
             );
@@ -158,7 +182,7 @@ final class FileContentHandler implements HandlerInterface
 
     private function isUseStatement(string $contentRow): bool
     {
-        return preg_match(
+        return (bool)preg_match(
             '/^use\s+([a-zA-Z\\\\]+(?:\s*,\s*[a-zA-Z\\\\]+)*)\s*;$/',
             $contentRow
         );
@@ -173,7 +197,7 @@ final class FileContentHandler implements HandlerInterface
 
     private function isInterfaceName(string $contentRow): bool
     {
-        return preg_match(
+        return (bool)preg_match(
             sprintf('/^interface %s/', $this->reflectionClass->getShortName()),
             $contentRow,
         );
@@ -192,7 +216,7 @@ final class FileContentHandler implements HandlerInterface
 
     private function isConstruct(string $contentRow): bool
     {
-        return preg_match(
+        return (bool)preg_match(
             '/.*__construct.*;$/',
             $contentRow
         );
@@ -200,7 +224,7 @@ final class FileContentHandler implements HandlerInterface
 
     private function isMethode(string $contentRow): bool
     {
-        return preg_match(
+        return (bool)preg_match(
             '/^.*function.*;$/',
             $contentRow
         );
@@ -219,12 +243,7 @@ final class FileContentHandler implements HandlerInterface
         );
     }
 
-    /**
-     * @param $dataType
-     *
-     * @return void
-     */
-    public function getReturnType($dataType): string
+    public function getReturnType(?string $dataType): string
     {
         $returnTypes = DataTypeService::getDataTypeFromString($dataType);
         return $returnTypes[array_rand($returnTypes)];
@@ -262,14 +281,17 @@ final class FileContentHandler implements HandlerInterface
             if(InterfaceBuilder::counter() > InterfaceBuilder::MAX_ALLOWED_INFINITY_INTERFACE_LOADER){
                 throw new InfinityInterfaceException();
             }
-            // todo Test testAndReturnValues in InterfaceBuilderTest geht nicht. hier gibt es probleme.
-            return sprintf(
-                'unserialize(\'%s\')',
-                serialize(
-                    ObjectBuilder::init($returnTypeWithNamespace)->build()
-                )
-            );
 
+            if (class_exists($returnTypeWithNamespace) || interface_exists($returnTypeWithNamespace)) {
+                return sprintf(
+                    'unserialize(\'%s\')',
+                    serialize(
+                        ObjectBuilder::init($returnTypeWithNamespace)->build()
+                    )
+                );
+            }
+
+            throw new ObjectBuilderUnknownClassTypeGivenException();
         }
 
         return sprintf(

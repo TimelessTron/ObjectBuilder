@@ -11,10 +11,10 @@ class UnknownOrBadFormatNotDeclaredClassException extends DomainException
 {
 
     /**
-     * @param ReflectionClass $class
-     * @param Exception|Throwable $exception
+     * @param ReflectionClass<Object> $class
+     * @param Throwable $exception
      */
-    public function __construct(ReflectionClass $class, $exception)
+    public function __construct(ReflectionClass $class, Throwable $exception)
     {
         parent::__construct(
             sprintf("The given class: '%s' cant create. Message: %s", $class->getName(), $exception->getMessage()),

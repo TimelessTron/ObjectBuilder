@@ -10,13 +10,15 @@ class InterfaceBuilder implements ClassBuilderInterface
     const MAX_ALLOWED_INFINITY_INTERFACE_LOADER = 5;
     private static int $counter = 0;
 
-    private ?string $namespace = null;
-
     public static function counter(): int
     {
         return ++self::$counter;
     }
 
+    /**
+     * @param ReflectionClass<Object> $class
+     * @param array<string, mixed> $parameters
+     */
     public function build(ReflectionClass $class, array $parameters): object
     {
         $interfaceHandler = HandlerService::getHandler($class);

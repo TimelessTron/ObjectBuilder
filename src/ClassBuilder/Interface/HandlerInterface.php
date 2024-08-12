@@ -6,8 +6,14 @@ use ReflectionClass;
 
 interface HandlerInterface
 {
-    /** @param array<string, string|array> $parameters */
+    /**
+     * @param ReflectionClass<Object> $reflectionClass
+     * @param array<string, mixed> $parameters
+     */
     public function execute(ReflectionClass $reflectionClass, array $parameters): mixed;
 
+    /**
+     * @param ReflectionClass<Object> $reflectionClass
+     */
     public static function support(ReflectionClass $reflectionClass): bool;
 }

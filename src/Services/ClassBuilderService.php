@@ -11,6 +11,9 @@ use Timelesstron\ObjectBuilder\ClassBuilder\TraitBuilder;
 
 class ClassBuilderService
 {
+    /**
+     * @param ReflectionClass<Object> $reflection
+     */
     public static function getClassBuilder(ReflectionClass $reflection): ClassBuilderInterface
     {
          return match (true) {
