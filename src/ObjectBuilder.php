@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder;
 
 use ReflectionClass;
@@ -10,7 +12,7 @@ use Timelesstron\ObjectBuilder\Services\ClassBuilderService;
 
 final class ObjectBuilder
 {
-    /** @var ReflectionClass<Object>  */
+    /** @var ReflectionClass<Object> */
     private ReflectionClass $reflection;
 
     private ClassBuilderInterface $classBuilder;

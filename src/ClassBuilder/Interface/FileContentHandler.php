@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\ClassBuilder\Interface;
 
 use ReflectionClass;
@@ -18,10 +20,11 @@ final class FileContentHandler implements HandlerInterface
      */
     private ReflectionClass $reflectionClass;
 
-    /** @var array<string, mixed>  */
+    /** @var array<string, mixed> */
     private array $parameters;
 
     private string $className;
+
     private string $namespace;
 
     /** @var array<int|string, string> $useStatements */
@@ -54,7 +57,7 @@ final class FileContentHandler implements HandlerInterface
      */
     public static function support(ReflectionClass $reflectionClass): bool
     {
-        if (!$reflectionClass->getFileName()){
+        if (!$reflectionClass->getFileName()) {
             return false;
         }
 
@@ -78,7 +81,7 @@ final class FileContentHandler implements HandlerInterface
             }
 
             if (str_contains($contentRow, 'namespace')) {
-//                $newRowsOfContent[] = $this->addNamespaceToContent($contentRow);
+                //                $newRowsOfContent[] = $this->addNamespaceToContent($contentRow);
                 $this->addNamespaceToContent($contentRow);
                 continue;
             }
@@ -97,7 +100,7 @@ final class FileContentHandler implements HandlerInterface
             };
         }
 
-        return implode("\n", [...$this->useStatements,'',...$newRowsOfContent]);
+        return implode("\n", [...$this->useStatements, '', ...$newRowsOfContent]);
     }
 
     private function buildMethodeString(string $contentRow): string
@@ -120,12 +123,12 @@ final class FileContentHandler implements HandlerInterface
 
         // gibt es contentRow return type als use statement? wenn nicht, Hinzufügen
         if (null === $dataTypeBuilder) {
-            if (!isset($this->useStatements[$returnType]) && $this->namespace){
+            if (!isset($this->useStatements[$returnType]) && $this->namespace) {
                 $this->useStatements[$returnType] = sprintf('use %s\%s;', $this->namespace, $returnType);
             }
         }
 
-        $dataTypeBuilderString = match(true){
+        $dataTypeBuilderString = match (true) {
             null === $dataTypeBuilder && !$property->value instanceof NoValueSet =>
                 $this->methodeWithGivenReturnObject($returnType, $property->value),
             null === $dataTypeBuilder && $property->value instanceof NoValueSet => $this->methodeWithObjectAsReturnValue($returnType),
@@ -278,7 +281,7 @@ final class FileContentHandler implements HandlerInterface
             // Create namespace for class in the same namespace.
             $returnTypeWithNamespace = sprintf('%s\\%s', trim($this->namespace), $returnType);
 
-            if(InterfaceBuilder::counter() > InterfaceBuilder::MAX_ALLOWED_INFINITY_INTERFACE_LOADER){
+            if (InterfaceBuilder::counter() > InterfaceBuilder::MAX_ALLOWED_INFINITY_INTERFACE_LOADER) {
                 throw new InfinityInterfaceException();
             }
 

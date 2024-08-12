@@ -1,7 +1,8 @@
 <?php
 
-namespace Timelesstron\ObjectBuilder\ClassBuilder\Dto;
+declare(strict_types=1);
 
+namespace Timelesstron\ObjectBuilder\ClassBuilder\Dto;
 
 class Methode
 {
@@ -12,5 +13,6 @@ class Methode
         public readonly string $name,
         public readonly Parameters $parameters,
         public readonly ?DataType $returnValue,
-    ) {}
+    ) {
+    }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\DataTypes;
 
 use DateTimeImmutable;
@@ -9,12 +11,11 @@ use Timelesstron\ObjectBuilder\Dto\Property;
 
 class MixedBuilder implements DataTypeInterface
 {
-
     private ?Property $property = null;
 
     public function build(): mixed
     {
-        if($this->property instanceof Property && !$this->property->value instanceof NoValueSet){
+        if ($this->property instanceof Property && !$this->property->value instanceof NoValueSet) {
 
             return $this->property->value;
         }

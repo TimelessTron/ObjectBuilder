@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\ClassBuilder;
 
 use DateInterval;
@@ -51,7 +53,6 @@ class ClassBuilder implements ClassBuilderInterface
         if ($constructor === null) {
             return $this->handleClassWithoutConstructor($class);
         }
-
 
         if ($constructor->isPrivate()) {
             $newInstance = $this->instantiateRandomStaticMethod($class);
@@ -190,7 +191,7 @@ class ClassBuilder implements ClassBuilderInterface
         $methods = $reflectionClass->getMethods();
         $staticSelfBuildMethods = array_filter(
             $methods,
-            fn(ReflectionMethod $method) =>
+            fn (ReflectionMethod $method) =>
                 $method->isStatic() && null !== $method->getReturnType() && !$method->getReturnType()->isBuiltin()
         );
 
@@ -208,7 +209,7 @@ class ClassBuilder implements ClassBuilderInterface
         try {
             $name = $randomStaticMethode->getName();
             return $reflectionClass->getName()::$name(...$parameters);
-        } catch (Throwable $throwable){
+        } catch (Throwable $throwable) {
             // Todo Was soll hier passieren?
         }
 
@@ -217,12 +218,12 @@ class ClassBuilder implements ClassBuilderInterface
 
     private function getDefaultValue(ReflectionParameter|ReflectionProperty $parameter): mixed
     {
-        if($parameter instanceof ReflectionParameter && $parameter->isDefaultValueAvailable()) {
+        if ($parameter instanceof ReflectionParameter && $parameter->isDefaultValueAvailable()) {
 
             return $parameter->getDefaultValue();
         }
 
-        if($parameter instanceof ReflectionProperty && $parameter->hasDefaultValue()) {
+        if ($parameter instanceof ReflectionProperty && $parameter->hasDefaultValue()) {
 
             return $parameter->getDefaultValue();
         }
@@ -256,7 +257,7 @@ class ClassBuilder implements ClassBuilderInterface
 
             $parameterOptions = explode(', or ', $matches[1]);
 
-            do{
+            do {
                 $key = array_rand($parameterOptions);
                 $parameters = $parameterOptions[$key];
                 unset($parameterOptions[$key]);
@@ -301,7 +302,7 @@ class ClassBuilder implements ClassBuilderInterface
 
                 try {
                     return $class->newInstanceArgs($newParameters);
-                } catch (Throwable $exception){
+                } catch (Throwable $exception) {
                     if (preg_match('/Unknown or bad format \((.*)\)/', $exception->getMessage(), $unknown)) {
 
                         $newParameters = match ($class->getName()) {
@@ -314,7 +315,7 @@ class ClassBuilder implements ClassBuilderInterface
                     }
                 }
 
-            } while(!empty($parameterOptions));
+            } while (!empty($parameterOptions));
 
         }
 
@@ -330,19 +331,19 @@ class ClassBuilder implements ClassBuilderInterface
         $parameters = explode(', ', trim($function, '( )'));
         $result = [];
         $newArray = [];
-        foreach($parameters as $parameter) {
-            if($parameter[0] === '['){
+        foreach ($parameters as $parameter) {
+            if ($parameter[0] === '[') {
                 $first = substr($parameter, 1);
                 $newArray[] = $first === '' ? null : $first;
                 continue;
             }
 
-            if(str_ends_with($parameter, ']')){
+            if (str_ends_with($parameter, ']')) {
                 $newArray[] = substr($parameter, 0, -1);
                 $parameter = $newArray;
                 $newArray = [];
             }
-            if(!empty($newArray)){
+            if (!empty($newArray)) {
                 $newArray[] = $parameter;
             } else {
                 $result[] = $parameter;

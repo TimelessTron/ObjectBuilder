@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\Services;
 
 use Timelesstron\ObjectBuilder\DataTypes\ArrayBuilder;

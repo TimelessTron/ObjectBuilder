@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\ClassBuilder\Dto;
 
 use Timelesstron\ObjectBuilder\Exceptions\ObjectBuilderWrongClassesGivenException;
@@ -7,11 +9,12 @@ use Timelesstron\ObjectBuilder\Exceptions\ObjectBuilderWrongClassesGivenExceptio
 class DataType
 {
     public readonly bool $isObject;
+
     public function __construct(
         public readonly ?string $namespace,
         public readonly mixed $type,
         public readonly mixed $value,
-        public readonly bool $isValueGiven
+        public readonly bool $isValueGiven,
     ) {
         $this->isObject = is_object($value);
 

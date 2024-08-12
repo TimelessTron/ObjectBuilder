@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\ClassBuilder;
 
 use InvalidArgumentException;
@@ -35,7 +37,7 @@ class EnumBuilder implements ClassBuilderInterface
 
             return constant(
                 sprintf(
-                    "%s::%s",
+                    '%s::%s',
                     $this->class->getName(),
                     $enum
                 )
@@ -53,7 +55,7 @@ class EnumBuilder implements ClassBuilderInterface
         }
 
         foreach ($this->parameters as $parameter) {
-            if (!in_array($parameter, array_column($this->class->getName()::cases(), 'value'))) {
+            if (!in_array($parameter, array_column($this->class->getName()::cases(), 'value'), true)) {
                 throw new InvalidArgumentException(
                     sprintf(
                         'Invalid parameter given vor enum %s: "%s".',

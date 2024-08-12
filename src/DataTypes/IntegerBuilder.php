@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\DataTypes;
 
 use InvalidArgumentException;
@@ -8,12 +10,11 @@ use Timelesstron\ObjectBuilder\Dto\Property;
 
 class IntegerBuilder implements DataTypeInterface
 {
-
     private ?Property $property = null;
 
     public function build(): int
     {
-        if($this->property instanceof Property && !$this->property->value instanceof NoValueSet){
+        if ($this->property instanceof Property && !$this->property->value instanceof NoValueSet) {
 
             return $this->property->value;
         }
@@ -23,7 +24,7 @@ class IntegerBuilder implements DataTypeInterface
 
     public function setProperty(Property $property): self
     {
-        if(!is_int($property->value) && null !== $property->value){
+        if (!is_int($property->value) && null !== $property->value) {
             throw new InvalidArgumentException(
                 sprintf(
                     'Value "%s" must be an integer. %s given',

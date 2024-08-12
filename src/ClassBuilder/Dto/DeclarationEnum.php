@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\ClassBuilder\Dto;
 
 use InvalidArgumentException;
@@ -25,6 +27,6 @@ enum DeclarationEnum: string
 
     public function existDeclaration(DeclarationEnum $declaration): bool
     {
-        return in_array($declaration, self::cases());
+        return in_array($declaration, self::cases(), true);
     }
 }

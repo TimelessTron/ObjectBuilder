@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\ClassBuilder;
 
 use ReflectionClass;
 
 class TraitBuilder implements ClassBuilderInterface
 {
-
     /**
      * @param ReflectionClass<Object> $class
      * @param array<string, mixed> $parameters
