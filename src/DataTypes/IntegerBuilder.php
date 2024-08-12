@@ -15,7 +15,6 @@ class IntegerBuilder implements DataTypeInterface
     public function build(): int
     {
         if ($this->property instanceof Property && !$this->property->value instanceof NoValueSet) {
-
             return $this->property->value;
         }
 

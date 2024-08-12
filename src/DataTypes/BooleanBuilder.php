@@ -15,7 +15,6 @@ class BooleanBuilder implements DataTypeInterface
     public function build(): bool
     {
         if ($this->property instanceof Property && !$this->property->value instanceof NoValueSet) {
-
             return $this->property->value;
         }
 

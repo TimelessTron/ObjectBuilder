@@ -48,7 +48,6 @@ class EnumBuilder implements ClassBuilderInterface
     private function isValideParameter(): bool
     {
         if (empty($this->parameters)) {
-
             return false;
         }
 

@@ -15,7 +15,6 @@ class SimpleObjectBuilder implements DataTypeInterface
 
     public function setProperty(Property $property): self
     {
-
         return $this;
     }
 

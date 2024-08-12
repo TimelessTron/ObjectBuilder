@@ -15,7 +15,6 @@ class MixedBuilder implements DataTypeInterface
     public function build(): mixed
     {
         if ($this->property instanceof Property && !$this->property->value instanceof NoValueSet) {
-
             return $this->property->value;
         }
 
@@ -31,7 +30,6 @@ class MixedBuilder implements DataTypeInterface
 
     public function buildAsString(): string
     {
-
         return var_export($this->build(), true);
     }
 

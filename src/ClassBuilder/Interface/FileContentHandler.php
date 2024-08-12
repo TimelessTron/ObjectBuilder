@@ -166,7 +166,6 @@ final class FileContentHandler implements HandlerInterface
 
         while (true) {
             if (!class_exists($className)) {
-
                 return $className;
             }
 

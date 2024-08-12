@@ -15,7 +15,6 @@ class StringBuilder implements DataTypeInterface
     public function build(): string
     {
         if ($this->property !== null && !$this->property->value instanceof NoValueSet) {
-
             return $this->property->value;
         }
 

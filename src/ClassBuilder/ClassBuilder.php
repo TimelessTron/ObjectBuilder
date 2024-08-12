@@ -42,7 +42,7 @@ class ClassBuilder implements ClassBuilderInterface
         /**
          * Analysieren was die Klasse hat.
          * - Mit Constructor
-         * - Ohne Constructor
+         * - Ohne Constructor.
          *
          * Wenn die Klasse ein Constructor hat, muss weiter überprüft werden:
          * - Ist der Constructor privat?
@@ -86,7 +86,6 @@ class ClassBuilder implements ClassBuilderInterface
 
             return $newInstance;
         }
-
     }
 
     private function generateRandomValue(ReflectionParameter|ReflectionProperty $parameter): mixed
@@ -146,7 +145,6 @@ class ClassBuilder implements ClassBuilderInterface
      */
     private function handleClassWithoutConstructor(ReflectionClass $reflectionClass): object
     {
-
         $object = $reflectionClass->newInstance();
 
         foreach ($reflectionClass->getProperties() as $property) {
@@ -213,12 +211,10 @@ class ClassBuilder implements ClassBuilderInterface
     private function getDefaultValue(ReflectionParameter|ReflectionProperty $parameter): mixed
     {
         if ($parameter instanceof ReflectionParameter && $parameter->isDefaultValueAvailable()) {
-
             return $parameter->getDefaultValue();
         }
 
         if ($parameter instanceof ReflectionProperty && $parameter->hasDefaultValue()) {
-
             return $parameter->getDefaultValue();
         }
 
@@ -234,7 +230,6 @@ class ClassBuilder implements ClassBuilderInterface
         $newParameters = [];
 
         if (preg_match('/Unknown or bad format \((.*)\)/', $exception->getMessage(), $unknown)) {
-
             $newParameters = match ($class->getName()) {
                 DateInterval::class => ['P7D'],
                 DatePeriod::class => ['R4/1983-08-04T00:06:00Z/P7D'],
@@ -298,7 +293,6 @@ class ClassBuilder implements ClassBuilderInterface
                     return $class->newInstanceArgs($newParameters);
                 } catch (Throwable $exception) {
                     if (preg_match('/Unknown or bad format \((.*)\)/', $exception->getMessage(), $unknown)) {
-
                         $newParameters = match ($class->getName()) {
                             DateInterval::class => ['P7D'],
                             DatePeriod::class => ['R4/1983-08-04T00:06:00Z/P7D'],
@@ -308,9 +302,7 @@ class ClassBuilder implements ClassBuilderInterface
                         return $class->newInstanceArgs($newParameters);
                     }
                 }
-
             } while (!empty($parameterOptions));
-
         }
 
         return $class->newInstanceArgs($newParameters);
