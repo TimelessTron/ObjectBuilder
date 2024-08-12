@@ -19,9 +19,7 @@ enum DeclarationEnum: string
             str_contains($content, ' protected ') => self::PROTECTED,
             str_contains($content, ' private ') => self::PRIVATE,
 
-            default => throw new InvalidArgumentException(
-                sprintf('Invalid declaration provided: %s', $content)
-            ),
+            default => throw new InvalidArgumentException(sprintf('Invalid declaration provided: %s', $content)),
         };
     }
 

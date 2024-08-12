@@ -9,7 +9,7 @@ use ReflectionClass;
 class ImplementedClassHandler implements HandlerInterface
 {
     /**
-     * @param ReflectionClass<Object> $reflectionClass
+     * @param ReflectionClass<object> $reflectionClass
      * @param array<string, mixed> $parameters
      */
     public function execute(ReflectionClass $reflectionClass, array $parameters): object
@@ -20,7 +20,21 @@ class ImplementedClassHandler implements HandlerInterface
     }
 
     /**
-     * @param ReflectionClass<Object> $reflectionClass
+     * @param ReflectionClass<object> $reflectionClass
+     */
+    public static function support(ReflectionClass $reflectionClass): bool
+    {
+        foreach (get_declared_classes() as $className) {
+            if (in_array($reflectionClass->getName(), class_implements($className), true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param ReflectionClass<object> $reflectionClass
      *
      * @return array<int, string>
      */
@@ -34,19 +48,5 @@ class ImplementedClassHandler implements HandlerInterface
         }
 
         return $implementingClasses;
-    }
-
-    /**
-     * @param ReflectionClass<Object> $reflectionClass
-     */
-    public static function support(ReflectionClass $reflectionClass): bool
-    {
-        foreach (get_declared_classes() as $className) {
-            if (in_array($reflectionClass->getName(), class_implements($className), true)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

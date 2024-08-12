@@ -9,7 +9,7 @@ use ReflectionClass;
 interface ClassBuilderInterface
 {
     /**
-     * @param ReflectionClass<Object> $class
+     * @param ReflectionClass<object> $class
      * @param array<string, mixed> $parameters
      *
      * @return mixed

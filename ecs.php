@@ -38,6 +38,9 @@ return static function (ECSConfig $ecsConfig): void {
             SetList::ARRAY,
             SetList::STRICT,
             SetList::SPACES,
+            SetList::SYMPLIFY,
+            SetList::COMMON,
+            SetList::COMMENTS,
         ],
     );
 

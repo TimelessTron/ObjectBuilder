@@ -11,7 +11,7 @@ use Throwable;
 class UnknownOrBadFormatNotDeclaredClassException extends DomainException
 {
     /**
-     * @param ReflectionClass<Object> $class
+     * @param ReflectionClass<object> $class
      * @param Throwable $exception
      */
     public function __construct(ReflectionClass $class, Throwable $exception)

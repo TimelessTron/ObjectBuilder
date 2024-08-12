@@ -20,11 +20,7 @@ class DataType
 
         if ($this->isObject && !str_ends_with($value::class, $type)) {
             throw new ObjectBuilderWrongClassesGivenException(
-                sprintf(
-                    'Given wrong class for return type. Given: %s. Expected: %s',
-                    $value::class,
-                    $type
-                ),
+                sprintf('Given wrong class for return type. Given: %s. Expected: %s', $value::class, $type),
             );
         }
     }

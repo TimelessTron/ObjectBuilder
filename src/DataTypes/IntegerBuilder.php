@@ -24,13 +24,9 @@ class IntegerBuilder implements DataTypeInterface
 
     public function setProperty(Property $property): self
     {
-        if (!is_int($property->value) && null !== $property->value) {
+        if (!is_int($property->value) && $property->value !== null) {
             throw new InvalidArgumentException(
-                sprintf(
-                    'Value "%s" must be an integer. %s given',
-                    $property->value,
-                    gettype($property->value)
-                )
+                sprintf('Value "%s" must be an integer. %s given', $property->value, gettype($property->value))
             );
         }
 

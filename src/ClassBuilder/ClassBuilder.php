@@ -8,7 +8,6 @@ use DateInterval;
 use DatePeriod;
 use PHPUnit\Event\InvalidArgumentException;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionMethod;
 use ReflectionParameter;
 use ReflectionProperty;
@@ -25,16 +24,16 @@ use Timelesstron\ObjectBuilder\Services\DataTypeService;
 
 class ClassBuilder implements ClassBuilderInterface
 {
-    /** @var array<string, mixed> */
+    /**
+     * @var array<string, mixed>
+     */
     private array $parameters;
 
     /**
-     * @param ReflectionClass<Object> $class
+     * @param ReflectionClass<object> $class
      * @param array<string, mixed> $parameters
      *
      * @return mixed
-     * @throws ReflectionException
-     * @throws Throwable
      */
     public function build(ReflectionClass $class, array $parameters): mixed
     {
@@ -56,27 +55,31 @@ class ClassBuilder implements ClassBuilderInterface
 
         if ($constructor->isPrivate()) {
             $newInstance = $this->instantiateRandomStaticMethod($class);
-            if (null !== $newInstance) {
+            if ($newInstance !== null) {
                 return $newInstance;
             }
 
             throw new ObjectBuilderWrongClassesGivenException(
-                sprintf('Cannot handle class "%s" with private constructor and no static methode.', $class->getShortName())
+                sprintf(
+                    'Cannot handle class "%s" with private constructor and no static methode.',
+                    $class->getShortName()
+                )
             );
         }
 
         try {
-            return $class->newInstanceArgs(
-                $this->handleClassWithConstructor($constructor)
-            );
+            return $class->newInstanceArgs($this->handleClassWithConstructor($constructor));
         } catch (Throwable $exception) {
             if (str_contains($exception->getMessage(), 'must be of type array, string given')) {
                 throw new InvalidArgumentException(
-                    sprintf('For Objects you must given an array, not an single value. Message: %s', $exception->getMessage())
+                    sprintf(
+                        'For Objects you must given an array, not an single value. Message: %s',
+                        $exception->getMessage()
+                    )
                 );
             }
             $newInstance = $this->instantiateRandomStaticMethod($class);
-            if (null === $newInstance || false === $newInstance) {
+            if ($newInstance === null || $newInstance === false) {
                 return $this->tryExceptionSolver($class, $exception);
                 //                        throw $exception;
             }
@@ -86,22 +89,17 @@ class ClassBuilder implements ClassBuilderInterface
 
     }
 
-    /**
-     * @throws ReflectionException
-     */
     private function generateRandomValue(ReflectionParameter|ReflectionProperty $parameter): mixed
     {
-        $propertyType = DataTypeService::getDataTypeFromString(
-            (string)$parameter->getType()
-        );
+        $propertyType = DataTypeService::getDataTypeFromString((string)$parameter->getType());
 
-        if (null !== $propertyType) {
+        if ($propertyType !== null) {
             $propertyType = $propertyType[array_rand($propertyType)];
         }
 
         if (
             array_key_exists($parameter->getName(), $this->parameters) &&
-            null === $this->parameters[$parameter->getName()]
+            $this->parameters[$parameter->getName()] === null
         ) {
             $propertyType = null;
         }
@@ -144,8 +142,7 @@ class ClassBuilder implements ClassBuilderInterface
     }
 
     /**
-     * @param ReflectionClass<Object> $reflectionClass
-     * @throws ReflectionException
+     * @param ReflectionClass<object> $reflectionClass
      */
     private function handleClassWithoutConstructor(ReflectionClass $reflectionClass): object
     {
@@ -166,8 +163,6 @@ class ClassBuilder implements ClassBuilderInterface
     }
 
     /**
-     * @throws ReflectionException
-     *
      * @return array<int, mixed>
      */
     private function handleClassWithConstructor(ReflectionMethod $constructor): array
@@ -182,9 +177,7 @@ class ClassBuilder implements ClassBuilderInterface
     }
 
     /**
-     * @param ReflectionClass<Object> $reflectionClass
-     *
-     * @throws ReflectionException
+     * @param ReflectionClass<object> $reflectionClass
      */
     private function instantiateRandomStaticMethod(ReflectionClass $reflectionClass): mixed
     {
@@ -192,7 +185,8 @@ class ClassBuilder implements ClassBuilderInterface
         $staticSelfBuildMethods = array_filter(
             $methods,
             fn (ReflectionMethod $method) =>
-                $method->isStatic() && null !== $method->getReturnType() && !$method->getReturnType()->isBuiltin()
+                $method->isStatic() && $method->getReturnType() !== null && !$method->getReturnType()
+                    ->isBuiltin()
         );
 
         if (empty($staticSelfBuildMethods)) {
@@ -232,10 +226,8 @@ class ClassBuilder implements ClassBuilderInterface
     }
 
     /**
-     * @param ReflectionClass<Object> $class
+     * @param ReflectionClass<object> $class
      * @param Throwable $exception
-     *
-     * @throws ReflectionException
      */
     private function tryExceptionSolver(ReflectionClass $class, Throwable $exception): object
     {
@@ -281,7 +273,9 @@ class ClassBuilder implements ClassBuilderInterface
                         continue;
                     }
 
-                    if (is_string($property->type) && (class_exists($property->type) || interface_exists($property->type))) {
+                    if (is_string($property->type) && (class_exists($property->type) || interface_exists(
+                        $property->type
+                    ))) {
                         $newParameters[] = ObjectBuilder::init(
                             $property->type,
                             $property->value instanceof NoValueSet ? [] : $property->value

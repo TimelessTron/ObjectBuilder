@@ -14,7 +14,7 @@ class StringBuilder implements DataTypeInterface
 
     public function build(): string
     {
-        if (null !== $this->property && !$this->property->value instanceof NoValueSet) {
+        if ($this->property !== null && !$this->property->value instanceof NoValueSet) {
 
             return $this->property->value;
         }
@@ -24,7 +24,7 @@ class StringBuilder implements DataTypeInterface
 
     public function setProperty(Property $property): self
     {
-        if (!is_string($property->value) && null !== $property->value) {
+        if (!is_string($property->value) && $property->value !== null) {
             throw new InvalidArgumentException(
                 sprintf('Value "%s" must be an string. %s given', $property->value, gettype($property->value))
             );
@@ -35,9 +35,14 @@ class StringBuilder implements DataTypeInterface
         return $this;
     }
 
+    public function buildAsString(): string
+    {
+        return var_export($this->build(), true);
+    }
+
     private function createValue(): string
     {
-        if (null === $this->property) {
+        if ($this->property === null) {
             return $this->generateRandomString(mt_rand(5, 20));
         }
 
@@ -80,17 +85,6 @@ class StringBuilder implements DataTypeInterface
 
     private function randomDateTime(): string
     {
-        return date(
-            'Y-m-d',
-            mt_rand(
-                strtotime('-1 year'),
-                strtotime('now')
-            )
-        );
-    }
-
-    public function buildAsString(): string
-    {
-        return var_export($this->build(), true);
+        return date('Y-m-d', mt_rand(strtotime('-1 year'), strtotime('now')));
     }
 }

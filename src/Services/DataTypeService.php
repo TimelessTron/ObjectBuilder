@@ -40,7 +40,7 @@ class DataTypeService
     public static function getDataTypeFromString(?string $dataType): ?array
     {
         return match (true) {
-            null === $dataType => null,
+            $dataType === null => null,
             str_starts_with($dataType, '?') => ['?', ltrim($dataType, '?')], //[array_rand([0, 1])],
             str_contains($dataType, '|') => explode('|', $dataType), //[array_rand(explode('|', $dataType))],
 

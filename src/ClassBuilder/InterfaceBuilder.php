@@ -19,7 +19,7 @@ class InterfaceBuilder implements ClassBuilderInterface
     }
 
     /**
-     * @param ReflectionClass<Object> $class
+     * @param ReflectionClass<object> $class
      * @param array<string, mixed> $parameters
      */
     public function build(ReflectionClass $class, array $parameters): object
