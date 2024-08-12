@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\ClassBuilder;
 
 use InvalidArgumentException;
@@ -7,14 +9,18 @@ use ReflectionClass;
 
 class EnumBuilder implements ClassBuilderInterface
 {
-    /** @var array<string, mixed> */
+    /**
+     * @var array<string, mixed>
+     */
     private array $parameters;
 
-    /** @var ReflectionClass<Object> */
+    /**
+     * @var ReflectionClass<object>
+     */
     private ReflectionClass $class;
 
     /**
-     * @param ReflectionClass<Object> $class
+     * @param ReflectionClass<object> $class
      * @param array<string, mixed> $parameters
      */
     public function build(ReflectionClass $class, array $parameters): object
@@ -33,13 +39,7 @@ class EnumBuilder implements ClassBuilderInterface
             $enums = $this->parameters;
             $enum = $enums[array_rand($enums)];
 
-            return constant(
-                sprintf(
-                    "%s::%s",
-                    $this->class->getName(),
-                    $enum
-                )
-            );
+            return constant(sprintf('%s::%s', $this->class->getName(), $enum));
         }
 
         return $enums[array_rand($enums)];
@@ -48,18 +48,13 @@ class EnumBuilder implements ClassBuilderInterface
     private function isValideParameter(): bool
     {
         if (empty($this->parameters)) {
-
             return false;
         }
 
         foreach ($this->parameters as $parameter) {
-            if (!in_array($parameter, array_column($this->class->getName()::cases(), 'value'))) {
+            if (!in_array($parameter, array_column($this->class->getName()::cases(), 'value'), true)) {
                 throw new InvalidArgumentException(
-                    sprintf(
-                        'Invalid parameter given vor enum %s: "%s".',
-                        $this->class->getShortName(),
-                        $parameter
-                    )
+                    sprintf('Invalid parameter given vor enum %s: "%s".', $this->class->getShortName(), $parameter)
                 );
             }
         }

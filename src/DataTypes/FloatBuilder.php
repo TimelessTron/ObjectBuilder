@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\DataTypes;
 
 use InvalidArgumentException;
@@ -8,13 +10,11 @@ use Timelesstron\ObjectBuilder\Dto\Property;
 
 class FloatBuilder implements DataTypeInterface
 {
-
     private ?Property $property = null;
 
     public function build(): float
     {
-        if($this->property instanceof Property && !$this->property->value instanceof NoValueSet){
-
+        if ($this->property instanceof Property && !$this->property->value instanceof NoValueSet) {
             return $this->property->value;
         }
 
@@ -23,13 +23,9 @@ class FloatBuilder implements DataTypeInterface
 
     public function setProperty(Property $property): self
     {
-        if(!is_float($property->value) && null !== $property->value){
+        if (!is_float($property->value) && $property->value !== null) {
             throw new InvalidArgumentException(
-                sprintf(
-                    'Value "%s" must be an float. %s given',
-                    $property->value,
-                    gettype($property->value)
-                )
+                sprintf('Value "%s" must be an float. %s given', $property->value, gettype($property->value))
             );
         }
 

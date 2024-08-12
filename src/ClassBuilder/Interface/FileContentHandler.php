@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\ClassBuilder\Interface;
 
 use ReflectionClass;
@@ -14,21 +16,26 @@ use Timelesstron\ObjectBuilder\Services\DataTypeService;
 final class FileContentHandler implements HandlerInterface
 {
     /**
-     * @var ReflectionClass<Object>
+     * @var ReflectionClass<object>
      */
     private ReflectionClass $reflectionClass;
 
-    /** @var array<string, mixed>  */
+    /**
+     * @var array<string, mixed>
+     */
     private array $parameters;
 
     private string $className;
+
     private string $namespace;
 
-    /** @var array<int|string, string> $useStatements */
+    /**
+     * @var array<int|string, string>
+     */
     private array $useStatements = [];
 
     /**
-     * @param ReflectionClass<Object> $reflectionClass
+     * @param ReflectionClass<object> $reflectionClass
      * @param array<string, mixed> $parameters
      */
     public function execute(ReflectionClass $reflectionClass, array $parameters): object
@@ -50,20 +57,23 @@ final class FileContentHandler implements HandlerInterface
     }
 
     /**
-     * @param ReflectionClass<Object> $reflectionClass
+     * @param ReflectionClass<object> $reflectionClass
      */
     public static function support(ReflectionClass $reflectionClass): bool
     {
-        if (!$reflectionClass->getFileName()){
+        if (!$reflectionClass->getFileName()) {
             return false;
         }
 
         return !empty(
-            file(
-                $reflectionClass->getFileName(),
-                FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES,
-            )
+            file($reflectionClass->getFileName(), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
         );
+    }
+
+    public function getReturnType(?string $dataType): string
+    {
+        $returnTypes = DataTypeService::getDataTypeFromString($dataType);
+        return $returnTypes[array_rand($returnTypes)];
     }
 
     /**
@@ -73,12 +83,12 @@ final class FileContentHandler implements HandlerInterface
     {
         $newRowsOfContent = [];
         foreach ($rowsOfFileContent as $contentRow) {
-            if ('<?php' === $contentRow) {
+            if ($contentRow === '<?php') {
                 continue;
             }
 
             if (str_contains($contentRow, 'namespace')) {
-//                $newRowsOfContent[] = $this->addNamespaceToContent($contentRow);
+                //                $newRowsOfContent[] = $this->addNamespaceToContent($contentRow);
                 $this->addNamespaceToContent($contentRow);
                 continue;
             }
@@ -97,7 +107,7 @@ final class FileContentHandler implements HandlerInterface
             };
         }
 
-        return implode("\n", [...$this->useStatements,'',...$newRowsOfContent]);
+        return implode("\n", [...$this->useStatements, '', ...$newRowsOfContent]);
     }
 
     private function buildMethodeString(string $contentRow): string
@@ -119,29 +129,28 @@ final class FileContentHandler implements HandlerInterface
         $dataTypeBuilder = DataTypeService::getDataTypeBuilder($returnType);
 
         // gibt es contentRow return type als use statement? wenn nicht, Hinzufügen
-        if (null === $dataTypeBuilder) {
-            if (!isset($this->useStatements[$returnType]) && $this->namespace){
+        if ($dataTypeBuilder === null) {
+            if (!isset($this->useStatements[$returnType]) && $this->namespace) {
                 $this->useStatements[$returnType] = sprintf('use %s\%s;', $this->namespace, $returnType);
             }
         }
 
-        $dataTypeBuilderString = match(true){
-            null === $dataTypeBuilder && !$property->value instanceof NoValueSet =>
+        $dataTypeBuilderString = match (true) {
+            $dataTypeBuilder === null && !$property->value instanceof NoValueSet =>
                 $this->methodeWithGivenReturnObject($returnType, $property->value),
-            null === $dataTypeBuilder && $property->value instanceof NoValueSet => $this->methodeWithObjectAsReturnValue($returnType),
-            !$property->value instanceof NoValueSet => $dataTypeBuilder->setProperty($property)->buildAsString(),
+            $dataTypeBuilder === null && $property->value instanceof NoValueSet => $this->methodeWithObjectAsReturnValue(
+                $returnType
+            ),
+            !$property->value instanceof NoValueSet => $dataTypeBuilder->setProperty($property)
+                ->buildAsString(),
             default => $dataTypeBuilder->buildAsString()
         };
 
-        return sprintf(
-            '%s { return %s; }',
-            trim($contentRow, ';'),
-            $dataTypeBuilderString,
-        );
+        return sprintf('%s { return %s; }', trim($contentRow, ';'), $dataTypeBuilderString);
     }
 
     /**
-     * @param ReflectionClass<Object> $reflectionClass
+     * @param ReflectionClass<object> $reflectionClass
      * @param array<string, mixed> $parameters
      */
     private function init(ReflectionClass $reflectionClass, array $parameters): void
@@ -157,7 +166,6 @@ final class FileContentHandler implements HandlerInterface
 
         while (true) {
             if (!class_exists($className)) {
-
                 return $className;
             }
 
@@ -182,10 +190,7 @@ final class FileContentHandler implements HandlerInterface
 
     private function isUseStatement(string $contentRow): bool
     {
-        return (bool)preg_match(
-            '/^use\s+([a-zA-Z\\\\]+(?:\s*,\s*[a-zA-Z\\\\]+)*)\s*;$/',
-            $contentRow
-        );
+        return (bool)preg_match('/^use\s+([a-zA-Z\\\\]+(?:\s*,\s*[a-zA-Z\\\\]+)*)\s*;$/', $contentRow);
     }
 
     private function collectUseStatements(string $contentRow): void
@@ -197,10 +202,7 @@ final class FileContentHandler implements HandlerInterface
 
     private function isInterfaceName(string $contentRow): bool
     {
-        return (bool)preg_match(
-            sprintf('/^interface %s/', $this->reflectionClass->getShortName()),
-            $contentRow,
-        );
+        return (bool)preg_match(sprintf('/^interface %s/', $this->reflectionClass->getShortName()), $contentRow);
     }
 
     private function buildClassNameString(string $contentRow): string
@@ -216,18 +218,12 @@ final class FileContentHandler implements HandlerInterface
 
     private function isConstruct(string $contentRow): bool
     {
-        return (bool)preg_match(
-            '/.*__construct.*;$/',
-            $contentRow
-        );
+        return (bool)preg_match('/.*__construct.*;$/', $contentRow);
     }
 
     private function isMethode(string $contentRow): bool
     {
-        return (bool)preg_match(
-            '/^.*function.*;$/',
-            $contentRow
-        );
+        return (bool)preg_match('/^.*function.*;$/', $contentRow);
     }
 
     private function buildConstructString(string $contentRow): string
@@ -237,16 +233,7 @@ final class FileContentHandler implements HandlerInterface
 
     private function methodeWithoutReturnValue(string $contentRow): string
     {
-        return sprintf(
-            '%s {  }',
-            trim($contentRow, ';'),
-        );
-    }
-
-    public function getReturnType(?string $dataType): string
-    {
-        $returnTypes = DataTypeService::getDataTypeFromString($dataType);
-        return $returnTypes[array_rand($returnTypes)];
+        return sprintf('%s {  }', trim($contentRow, ';'));
     }
 
     private function getMethodeName(string $contentRow): string
@@ -258,18 +245,10 @@ final class FileContentHandler implements HandlerInterface
     private function methodeWithGivenReturnObject(string $type, mixed $value): string
     {
         if (is_object($value)) {
-            return sprintf(
-                'unserialize(\'%s\')',
-                serialize($value)
-            );
+            return sprintf('unserialize(\'%s\')', serialize($value));
         }
 
-        return sprintf(
-            '%s::init(%s::class, %s)->build()',
-            ObjectBuilder::class,
-            $type,
-            var_export($value, true),
-        );
+        return sprintf('%s::init(%s::class, %s)->build()', ObjectBuilder::class, $type, var_export($value, true));
     }
 
     private function methodeWithObjectAsReturnValue(?string $returnType): string
@@ -278,26 +257,20 @@ final class FileContentHandler implements HandlerInterface
             // Create namespace for class in the same namespace.
             $returnTypeWithNamespace = sprintf('%s\\%s', trim($this->namespace), $returnType);
 
-            if(InterfaceBuilder::counter() > InterfaceBuilder::MAX_ALLOWED_INFINITY_INTERFACE_LOADER){
+            if (InterfaceBuilder::counter() > InterfaceBuilder::MAX_ALLOWED_INFINITY_INTERFACE_LOADER) {
                 throw new InfinityInterfaceException();
             }
 
             if (class_exists($returnTypeWithNamespace) || interface_exists($returnTypeWithNamespace)) {
                 return sprintf(
                     'unserialize(\'%s\')',
-                    serialize(
-                        ObjectBuilder::init($returnTypeWithNamespace)->build()
-                    )
+                    serialize(ObjectBuilder::init($returnTypeWithNamespace)->build())
                 );
             }
 
             throw new ObjectBuilderUnknownClassTypeGivenException();
         }
 
-        return sprintf(
-            '%s::init(%s::class)->build()',
-            ObjectBuilder::class,
-            $returnType,
-        );
+        return sprintf('%s::init(%s::class)->build()', ObjectBuilder::class, $returnType);
     }
 }

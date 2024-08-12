@@ -1,21 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\DataTypes;
 
 use DateTimeImmutable;
-use Exception;
 use Timelesstron\ObjectBuilder\ClassBuilder\Dto\NoValueSet;
 use Timelesstron\ObjectBuilder\Dto\Property;
 
 class MixedBuilder implements DataTypeInterface
 {
-
     private ?Property $property = null;
 
     public function build(): mixed
     {
-        if($this->property instanceof Property && !$this->property->value instanceof NoValueSet){
-
+        if ($this->property instanceof Property && !$this->property->value instanceof NoValueSet) {
             return $this->property->value;
         }
 
@@ -27,6 +26,11 @@ class MixedBuilder implements DataTypeInterface
         $this->property = $property;
 
         return $this;
+    }
+
+    public function buildAsString(): string
+    {
+        return var_export($this->build(), true);
     }
 
     private function generateRandomValue(): mixed
@@ -55,19 +59,8 @@ class MixedBuilder implements DataTypeInterface
         return $randomString;
     }
 
-    /**
-     * @throws Exception
-     */
     private function generateRandomDateTime(): DateTimeImmutable
     {
-        return new DateTimeImmutable(
-            '@' . mt_rand(1_704_067_200, time())
-        );
-    }
-
-    public function buildAsString(): string
-    {
-        // TODO: Implement buildAsString() method.
-        return var_export($this->build(), true);
+        return new DateTimeImmutable('@' . mt_rand(1_704_067_200, time()));
     }
 }

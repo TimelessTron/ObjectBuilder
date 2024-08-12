@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\ClassBuilder;
 
 use DateInterval;
 use DatePeriod;
 use PHPUnit\Event\InvalidArgumentException;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionMethod;
 use ReflectionParameter;
 use ReflectionProperty;
@@ -23,16 +24,16 @@ use Timelesstron\ObjectBuilder\Services\DataTypeService;
 
 class ClassBuilder implements ClassBuilderInterface
 {
-    /** @var array<string, mixed> */
+    /**
+     * @var array<string, mixed>
+     */
     private array $parameters;
 
     /**
-     * @param ReflectionClass<Object> $class
+     * @param ReflectionClass<object> $class
      * @param array<string, mixed> $parameters
      *
      * @return mixed
-     * @throws ReflectionException
-     * @throws Throwable
      */
     public function build(ReflectionClass $class, array $parameters): mixed
     {
@@ -41,7 +42,7 @@ class ClassBuilder implements ClassBuilderInterface
         /**
          * Analysieren was die Klasse hat.
          * - Mit Constructor
-         * - Ohne Constructor
+         * - Ohne Constructor.
          *
          * Wenn die Klasse ein Constructor hat, muss weiter überprüft werden:
          * - Ist der Constructor privat?
@@ -52,55 +53,52 @@ class ClassBuilder implements ClassBuilderInterface
             return $this->handleClassWithoutConstructor($class);
         }
 
-
         if ($constructor->isPrivate()) {
             $newInstance = $this->instantiateRandomStaticMethod($class);
-            if (null !== $newInstance) {
+            if ($newInstance !== null) {
                 return $newInstance;
             }
 
             throw new ObjectBuilderWrongClassesGivenException(
-                sprintf('Cannot handle class "%s" with private constructor and no static methode.', $class->getShortName())
+                sprintf(
+                    'Cannot handle class "%s" with private constructor and no static methode.',
+                    $class->getShortName()
+                )
             );
         }
 
         try {
-            return $class->newInstanceArgs(
-                $this->handleClassWithConstructor($constructor)
-            );
+            return $class->newInstanceArgs($this->handleClassWithConstructor($constructor));
         } catch (Throwable $exception) {
             if (str_contains($exception->getMessage(), 'must be of type array, string given')) {
                 throw new InvalidArgumentException(
-                    sprintf('For Objects you must given an array, not an single value. Message: %s', $exception->getMessage())
+                    sprintf(
+                        'For Objects you must given an array, not an single value. Message: %s',
+                        $exception->getMessage()
+                    )
                 );
             }
             $newInstance = $this->instantiateRandomStaticMethod($class);
-            if (null === $newInstance || false === $newInstance) {
+            if ($newInstance === null || $newInstance === false) {
                 return $this->tryExceptionSolver($class, $exception);
                 //                        throw $exception;
             }
 
             return $newInstance;
         }
-
     }
 
-    /**
-     * @throws ReflectionException
-     */
     private function generateRandomValue(ReflectionParameter|ReflectionProperty $parameter): mixed
     {
-        $propertyType = DataTypeService::getDataTypeFromString(
-            (string)$parameter->getType()
-        );
+        $propertyType = DataTypeService::getDataTypeFromString((string)$parameter->getType());
 
-        if (null !== $propertyType) {
+        if ($propertyType !== null) {
             $propertyType = $propertyType[array_rand($propertyType)];
         }
 
         if (
             array_key_exists($parameter->getName(), $this->parameters) &&
-            null === $this->parameters[$parameter->getName()]
+            $this->parameters[$parameter->getName()] === null
         ) {
             $propertyType = null;
         }
@@ -143,12 +141,10 @@ class ClassBuilder implements ClassBuilderInterface
     }
 
     /**
-     * @param ReflectionClass<Object> $reflectionClass
-     * @throws ReflectionException
+     * @param ReflectionClass<object> $reflectionClass
      */
     private function handleClassWithoutConstructor(ReflectionClass $reflectionClass): object
     {
-
         $object = $reflectionClass->newInstance();
 
         foreach ($reflectionClass->getProperties() as $property) {
@@ -165,8 +161,6 @@ class ClassBuilder implements ClassBuilderInterface
     }
 
     /**
-     * @throws ReflectionException
-     *
      * @return array<int, mixed>
      */
     private function handleClassWithConstructor(ReflectionMethod $constructor): array
@@ -181,17 +175,16 @@ class ClassBuilder implements ClassBuilderInterface
     }
 
     /**
-     * @param ReflectionClass<Object> $reflectionClass
-     *
-     * @throws ReflectionException
+     * @param ReflectionClass<object> $reflectionClass
      */
     private function instantiateRandomStaticMethod(ReflectionClass $reflectionClass): mixed
     {
         $methods = $reflectionClass->getMethods();
         $staticSelfBuildMethods = array_filter(
             $methods,
-            fn(ReflectionMethod $method) =>
-                $method->isStatic() && null !== $method->getReturnType() && !$method->getReturnType()->isBuiltin()
+            fn (ReflectionMethod $method) =>
+                $method->isStatic() && $method->getReturnType() !== null && !$method->getReturnType()
+                    ->isBuiltin()
         );
 
         if (empty($staticSelfBuildMethods)) {
@@ -208,7 +201,7 @@ class ClassBuilder implements ClassBuilderInterface
         try {
             $name = $randomStaticMethode->getName();
             return $reflectionClass->getName()::$name(...$parameters);
-        } catch (Throwable $throwable){
+        } catch (Throwable $throwable) {
             // Todo Was soll hier passieren?
         }
 
@@ -217,13 +210,11 @@ class ClassBuilder implements ClassBuilderInterface
 
     private function getDefaultValue(ReflectionParameter|ReflectionProperty $parameter): mixed
     {
-        if($parameter instanceof ReflectionParameter && $parameter->isDefaultValueAvailable()) {
-
+        if ($parameter instanceof ReflectionParameter && $parameter->isDefaultValueAvailable()) {
             return $parameter->getDefaultValue();
         }
 
-        if($parameter instanceof ReflectionProperty && $parameter->hasDefaultValue()) {
-
+        if ($parameter instanceof ReflectionProperty && $parameter->hasDefaultValue()) {
             return $parameter->getDefaultValue();
         }
 
@@ -231,17 +222,14 @@ class ClassBuilder implements ClassBuilderInterface
     }
 
     /**
-     * @param ReflectionClass<Object> $class
+     * @param ReflectionClass<object> $class
      * @param Throwable $exception
-     *
-     * @throws ReflectionException
      */
     private function tryExceptionSolver(ReflectionClass $class, Throwable $exception): object
     {
         $newParameters = [];
 
         if (preg_match('/Unknown or bad format \((.*)\)/', $exception->getMessage(), $unknown)) {
-
             $newParameters = match ($class->getName()) {
                 DateInterval::class => ['P7D'],
                 DatePeriod::class => ['R4/1983-08-04T00:06:00Z/P7D'],
@@ -256,7 +244,7 @@ class ClassBuilder implements ClassBuilderInterface
 
             $parameterOptions = explode(', or ', $matches[1]);
 
-            do{
+            do {
                 $key = array_rand($parameterOptions);
                 $parameters = $parameterOptions[$key];
                 unset($parameterOptions[$key]);
@@ -280,7 +268,9 @@ class ClassBuilder implements ClassBuilderInterface
                         continue;
                     }
 
-                    if (is_string($property->type) && (class_exists($property->type) || interface_exists($property->type))) {
+                    if (is_string($property->type) && (class_exists($property->type) || interface_exists(
+                        $property->type
+                    ))) {
                         $newParameters[] = ObjectBuilder::init(
                             $property->type,
                             $property->value instanceof NoValueSet ? [] : $property->value
@@ -301,9 +291,8 @@ class ClassBuilder implements ClassBuilderInterface
 
                 try {
                     return $class->newInstanceArgs($newParameters);
-                } catch (Throwable $exception){
+                } catch (Throwable $exception) {
                     if (preg_match('/Unknown or bad format \((.*)\)/', $exception->getMessage(), $unknown)) {
-
                         $newParameters = match ($class->getName()) {
                             DateInterval::class => ['P7D'],
                             DatePeriod::class => ['R4/1983-08-04T00:06:00Z/P7D'],
@@ -313,9 +302,7 @@ class ClassBuilder implements ClassBuilderInterface
                         return $class->newInstanceArgs($newParameters);
                     }
                 }
-
-            } while(!empty($parameterOptions));
-
+            } while (!empty($parameterOptions));
         }
 
         return $class->newInstanceArgs($newParameters);
@@ -330,19 +317,19 @@ class ClassBuilder implements ClassBuilderInterface
         $parameters = explode(', ', trim($function, '( )'));
         $result = [];
         $newArray = [];
-        foreach($parameters as $parameter) {
-            if($parameter[0] === '['){
+        foreach ($parameters as $parameter) {
+            if ($parameter[0] === '[') {
                 $first = substr($parameter, 1);
                 $newArray[] = $first === '' ? null : $first;
                 continue;
             }
 
-            if(str_ends_with($parameter, ']')){
+            if (str_ends_with($parameter, ']')) {
                 $newArray[] = substr($parameter, 0, -1);
                 $parameter = $newArray;
                 $newArray = [];
             }
-            if(!empty($newArray)){
+            if (!empty($newArray)) {
                 $newArray[] = $parameter;
             } else {
                 $result[] = $parameter;

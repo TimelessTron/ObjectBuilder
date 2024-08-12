@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\DataTypes;
 
 use InvalidArgumentException;
@@ -12,8 +14,7 @@ class BooleanBuilder implements DataTypeInterface
 
     public function build(): bool
     {
-        if($this->property instanceof Property && !$this->property->value instanceof NoValueSet){
-
+        if ($this->property instanceof Property && !$this->property->value instanceof NoValueSet) {
             return $this->property->value;
         }
 
@@ -22,7 +23,7 @@ class BooleanBuilder implements DataTypeInterface
 
     public function setProperty(Property $property): self
     {
-        if(!is_bool($property->value) && null !== $property->value){
+        if (!is_bool($property->value) && $property->value !== null) {
             throw new InvalidArgumentException(
                 sprintf('Value "%s" must be an boolean. %s given', $property->value, gettype($property->value))
             );

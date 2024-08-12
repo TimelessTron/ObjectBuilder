@@ -1,17 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\Exceptions;
 
 use DomainException;
-use Exception;
 use ReflectionClass;
 use Throwable;
 
 class UnknownOrBadFormatNotDeclaredClassException extends DomainException
 {
-
     /**
-     * @param ReflectionClass<Object> $class
+     * @param ReflectionClass<object> $class
      * @param Throwable $exception
      */
     public function __construct(ReflectionClass $class, Throwable $exception)

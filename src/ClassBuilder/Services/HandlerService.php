@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Timelesstron\ObjectBuilder\ClassBuilder\Services;
 
 use ReflectionClass;
@@ -12,7 +14,7 @@ use Timelesstron\ObjectBuilder\Exceptions\InterfaceHandlerNotFoundException;
 final class HandlerService
 {
     /**
-     * @param ReflectionClass<Object> $reflection
+     * @param ReflectionClass<object> $reflection
      */
     public static function getHandler(ReflectionClass $reflection): HandlerInterface
     {

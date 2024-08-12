@@ -1,13 +1,13 @@
 <?php
 
-namespace Timelesstron\ObjectBuilder\DataTypes;
+declare(strict_types=1);
 
+namespace Timelesstron\ObjectBuilder\DataTypes;
 
 use Timelesstron\ObjectBuilder\Dto\Property;
 
 class SimpleObjectBuilder implements DataTypeInterface
 {
-
     public function build(): mixed
     {
         return (object)[];
@@ -15,8 +15,6 @@ class SimpleObjectBuilder implements DataTypeInterface
 
     public function setProperty(Property $property): self
     {
-        // TODO: Implement setProperty() method.
-
         return $this;
     }
 
