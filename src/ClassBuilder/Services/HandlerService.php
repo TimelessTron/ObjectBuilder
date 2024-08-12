@@ -11,6 +11,9 @@ use Timelesstron\ObjectBuilder\Exceptions\InterfaceHandlerNotFoundException;
 
 final class HandlerService
 {
+    /**
+     * @param ReflectionClass<Object> $reflection
+     */
     public static function getHandler(ReflectionClass $reflection): HandlerInterface
     {
         return match (true) {

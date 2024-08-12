@@ -7,9 +7,16 @@ use ReflectionClass;
 
 class EnumBuilder implements ClassBuilderInterface
 {
-    /** @var array<string, string|array> */
+    /** @var array<string, mixed> */
     private array $parameters;
+
+    /** @var ReflectionClass<Object> */
     private ReflectionClass $class;
+
+    /**
+     * @param ReflectionClass<Object> $class
+     * @param array<string, mixed> $parameters
+     */
     public function build(ReflectionClass $class, array $parameters): object
     {
         $this->class = $class;
@@ -51,7 +58,7 @@ class EnumBuilder implements ClassBuilderInterface
                     sprintf(
                         'Invalid parameter given vor enum %s: "%s".',
                         $this->class->getShortName(),
-                        implode(', ', $this->parameters)
+                        $parameter
                     )
                 );
             }

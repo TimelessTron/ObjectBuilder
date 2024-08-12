@@ -7,19 +7,27 @@ use ReflectionClass;
 class ImplementedClassHandler implements HandlerInterface
 {
 
-    public function execute(ReflectionClass $reflectionClass, array $parameters): mixed
+    /**
+     * @param ReflectionClass<Object> $reflectionClass
+     * @param array<string, mixed> $parameters
+     */
+    public function execute(ReflectionClass $reflectionClass, array $parameters): object
     {
         $implementedClasses = $this->interfaceImplementedClasses($reflectionClass);
 
         return new $implementedClasses[array_rand($implementedClasses)]();
     }
 
-    /** return array<int, string> */
-    private function interfaceImplementedClasses(ReflectionClass $interface): array
+    /**
+     * @param ReflectionClass<Object> $reflectionClass
+     *
+     * @return array<int, string>
+     */
+    private function interfaceImplementedClasses(ReflectionClass $reflectionClass): array
     {
         $implementingClasses = [];
         foreach (get_declared_classes() as $className) {
-            if (in_array($interface->getName(), class_implements($className))) {
+            if (in_array($reflectionClass->getName(), class_implements($className))) {
                 $implementingClasses[] = $className;
             }
         }
@@ -27,6 +35,9 @@ class ImplementedClassHandler implements HandlerInterface
         return $implementingClasses;
     }
 
+    /**
+     * @param ReflectionClass<Object> $reflectionClass
+     */
     public static function support(ReflectionClass $reflectionClass): bool
     {
         foreach (get_declared_classes() as $className) {

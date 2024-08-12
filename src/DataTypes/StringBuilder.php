@@ -60,7 +60,7 @@ class StringBuilder implements DataTypeInterface
         return $randomString;
     }
 
-    private function randomTimezone()
+    private function randomTimezone(): string
     {
         $timezones = timezone_identifiers_list();
 

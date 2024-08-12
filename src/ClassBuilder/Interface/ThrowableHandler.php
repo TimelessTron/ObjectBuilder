@@ -8,6 +8,10 @@ use Timelesstron\ObjectBuilder\ObjectBuilder;
 
 final class ThrowableHandler implements HandlerInterface
 {
+    /**
+     * @param ReflectionClass<Object> $reflectionClass
+     * @param array<string, mixed> $parameters
+     */
     public function execute(ReflectionClass $reflectionClass, array $parameters): object
     {
         return ObjectBuilder::init(Exception::class, [
@@ -16,6 +20,9 @@ final class ThrowableHandler implements HandlerInterface
         ])->build();
     }
 
+    /**
+     * @param ReflectionClass<Object> $reflectionClass
+     */
     public static function support(ReflectionClass $reflectionClass): bool
     {
         return $reflectionClass->getName() === 'Throwable';

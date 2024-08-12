@@ -7,8 +7,8 @@ use ReflectionClass;
 interface ClassBuilderInterface
 {
     /**
-     * @param ReflectionClass $class
-     * @param array<string, string|array> $parameters
+     * @param ReflectionClass<Object> $class
+     * @param array<string, mixed> $parameters
      *
      * @return mixed
      */

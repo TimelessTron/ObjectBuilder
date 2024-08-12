@@ -11,6 +11,9 @@ class ArrayBuilder implements DataTypeInterface
 
     private ?Property $property = null;
 
+    /**
+     * @return array<int|string, mixed>
+     */
     public function build(): array
     {
         if ($this->property instanceof Property && !$this->property->value instanceof NoValueSet) {
